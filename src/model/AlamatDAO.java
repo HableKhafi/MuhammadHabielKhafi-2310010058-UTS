@@ -12,7 +12,7 @@ import java.util.*;
  *
  * @author ASUS
  */
-public class AlmatDAO {
+public class AlamatDAO {
     public List<Alamat> getAll() throws SQLException {
         List<Alamat> list = new ArrayList<>();
         String sql = "SELECT * FROM addressbook";
