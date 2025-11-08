@@ -70,25 +70,29 @@ public class AlamatDAO {
     }
 
     public List<Alamat> search(String keyword) throws SQLException {
-        List<Alamat> list = new ArrayList<>();
-        String sql = "SELECT * FROM addressbook WHERE nama LIKE ? OR telepon LIKE ? OR email LIKE ?";
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, "%" + keyword + "%");
-            ps.setString(2, "%" + keyword + "%");
-            ps.setString(3, "%" + keyword + "%");
-            ResultSet rs = ps.executeQuery();
-            while (rs.next()) {
-                list.add(new Alamat(
-                        rs.getInt("id"),
-                        rs.getString("nama"),
-                        rs.getString("alamat"),
-                        rs.getString("telepon"),
-                        rs.getString("email"),
-                        rs.getString("kategori")
-                ));
-            }
+    List<Alamat> list = new ArrayList<>();
+    String sql = "SELECT * FROM addressbook "
+            + "WHERE nama LIKE ? OR alamat LIKE ? OR telepon LIKE ? OR email LIKE ? OR kategori LIKE ?";
+
+    try (Connection conn = DatabaseConnection.getConnection();
+         PreparedStatement ps = conn.prepareStatement(sql)) {
+
+        for (int i = 1; i <= 5; i++) {
+            ps.setString(i, "%" + keyword + "%");
         }
-        return list;
+
+        ResultSet rs = ps.executeQuery();
+        while (rs.next()) {
+            list.add(new Alamat(
+                    rs.getInt("id"),
+                    rs.getString("nama"),
+                    rs.getString("alamat"),
+                    rs.getString("telepon"),
+                    rs.getString("email"),
+                    rs.getString("kategori")
+            ));
+        }
     }
+    return list;
+}
 }

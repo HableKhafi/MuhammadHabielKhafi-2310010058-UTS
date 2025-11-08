@@ -21,13 +21,240 @@ import java.util.List;
  */
 public class BukuAlamatFrame extends javax.swing.JFrame {
 
+    
+    private DefaultTableModel model;
+    private AlamatController controller;
+    
     /**
      * Creates new form BukuAlamatFrame
      */
     public BukuAlamatFrame() {
         initComponents();
+        
+         controller = new AlamatController();
+
+        model = new DefaultTableModel(new String[]{
+                "No", "Nama", "Alamat", "Telepon", "Email", "Kategori"
+        }, 0);
+        tblAlamat.setModel(model);
+        tblAlamat.getColumnModel().getColumn(0).setPreferredWidth(30);
+        tblAlamat.getColumnModel().getColumn(1).setPreferredWidth(120);
+        tblAlamat.getColumnModel().getColumn(2).setPreferredWidth(150);
+        tblAlamat.getColumnModel().getColumn(3).setPreferredWidth(120);
+        tblAlamat.getColumnModel().getColumn(4).setPreferredWidth(200);
+        tblAlamat.getColumnModel().getColumn(5).setPreferredWidth(100);
+        tblAlamat.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        
+        
+        loadAlamat();
+        
+        this.setSize(580, 665); // atur ukuran default jendela
+        this.setLocationRelativeTo(null); // tampil di tengah layar
     }
 
+    
+     // ---------------------------- LOAD DATA ----------------------------
+    private void loadAlamat() {
+        try {
+            model.setRowCount(0);
+            List<Alamat> list = controller.getAll();
+            int no = 1;
+            for (Alamat a : list) {
+                model.addRow(new Object[]{
+                        no++, a.getNama(), a.getAlamat(),
+                        a.getTelepon(), a.getEmail(), a.getKategori()
+                });
+            }
+        } catch (SQLException e) {
+            showError(e.getMessage());
+        }
+    }
+
+     // ---------------------------- TAMBAH DATA ----------------------------
+    private void addAlamat() {
+        String nama = txtNama.getText().trim();
+        String alamat = txtAlamat.getText().trim();
+        String telepon = txtTelepon.getText().trim();
+        String email = txtEmail.getText().trim();
+        String kategori = (String) cmbKategori.getSelectedItem();
+
+        if (nama.isEmpty() || telepon.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Nama dan Telepon wajib diisi!");
+            return;
+        }
+
+        try {
+            controller.add(nama, alamat, telepon, email, kategori);
+            JOptionPane.showMessageDialog(this, "Kontak berhasil ditambahkan!");
+            clearFields();
+            loadAlamat();
+        } catch (SQLException e) {
+            showError(e.getMessage());
+        }
+    }
+    
+     // ---------------------------- EDIT DATA ----------------------------
+    private void editAlamat() {
+        int selectedRow = tblAlamat.getSelectedRow();
+        if (selectedRow == -1) {
+            JOptionPane.showMessageDialog(this, "Pilih data yang ingin diedit!");
+            return;
+        }
+
+        int id = getDatabaseIdFromRow(selectedRow);
+        String nama = txtNama.getText().trim();
+        String alamat = txtAlamat.getText().trim();
+        String telepon = txtTelepon.getText().trim();
+        String email = txtEmail.getText().trim();
+        String kategori = (String) cmbKategori.getSelectedItem();
+
+        if (nama.isEmpty() || telepon.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Nama dan Telepon wajib diisi!");
+            return;
+        }
+
+        try {
+            controller.update(id, nama, alamat, telepon, email, kategori);
+            JOptionPane.showMessageDialog(this, "Kontak berhasil diperbarui!");
+            clearFields();
+            loadAlamat();
+        } catch (SQLException e) {
+            showError(e.getMessage());
+        }
+    }
+    
+    // ---------------------------- HAPUS DATA ----------------------------
+    private void deleteAlamat() {
+        int selectedRow = tblAlamat.getSelectedRow();
+        if (selectedRow == -1) {
+            JOptionPane.showMessageDialog(this, "Pilih data yang ingin dihapus!");
+            return;
+        }
+
+        int confirm = JOptionPane.showConfirmDialog(this, "Yakin ingin menghapus data ini?",
+                "Konfirmasi", JOptionPane.YES_NO_OPTION);
+        if (confirm == JOptionPane.YES_OPTION) {
+            int id = getDatabaseIdFromRow(selectedRow);
+            try {
+                controller.delete(id);
+                JOptionPane.showMessageDialog(this, "Alamat berhasil dihapus!");
+                clearFields();
+                loadAlamat();
+            } catch (SQLException e) {
+                showError(e.getMessage());
+            }
+        }
+    }
+    
+        // ---------------------------- CARI DATA ----------------------------
+    private void searchAlamat() {
+        String keyword = txtPencarian.getText().trim();
+        try {
+            List<Alamat> list = keyword.isEmpty()
+                    ? controller.getAll()
+                    : controller.search(keyword);
+            model.setRowCount(0);
+            int no = 1;
+            for (Alamat a : list) {
+                model.addRow(new Object[]{
+                        no++, a.getNama(), a.getAlamat(),
+                        a.getTelepon(), a.getEmail(), a.getKategori()
+                });
+            }
+        } catch (SQLException e) {
+            showError(e.getMessage());
+        }
+    }
+    
+     // ---------------------------- EXPORT CSV ----------------------------
+    private void exportToCSV() {
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Simpan File CSV");
+        int userSelection = fileChooser.showSaveDialog(this);
+
+        if (userSelection == JFileChooser.APPROVE_OPTION) {
+            File file = fileChooser.getSelectedFile();
+            if (!file.getAbsolutePath().endsWith(".csv")) {
+                file = new File(file.getAbsolutePath() + ".csv");
+            }
+
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
+                writer.write("No,Nama,Alamat,Telepon,Email,Kategori\n");
+                for (int i = 0; i < model.getRowCount(); i++) {
+                    writer.write(model.getValueAt(i, 0) + "," +
+                            model.getValueAt(i, 1) + "," +
+                            model.getValueAt(i, 2) + "," +
+                            model.getValueAt(i, 3) + "," +
+                            model.getValueAt(i, 4) + "," +
+                            model.getValueAt(i, 5) + "\n");
+                }
+                JOptionPane.showMessageDialog(this, "Data berhasil diekspor ke: " + file.getAbsolutePath());
+            } catch (IOException e) {
+                showError(e.getMessage());
+            }
+        }
+    }
+
+    // ---------------------------- IMPORT CSV ----------------------------
+    private void importFromCSV() {
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Pilih File CSV");
+        int userSelection = fileChooser.showOpenDialog(this);
+
+        if (userSelection == JFileChooser.APPROVE_OPTION) {
+            File file = fileChooser.getSelectedFile();
+            try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+                String line = reader.readLine(); // skip header
+                while ((line = reader.readLine()) != null) {
+                    String[] data = line.split(",");
+                    if (data.length == 6) {
+                        controller.add(data[1], data[2], data[3], data[4], data[5]);
+                    }
+                }
+                JOptionPane.showMessageDialog(this, "Data berhasil diimpor!");
+                loadAlamat();
+            } catch (Exception e) {
+                showError(e.getMessage());
+            }
+        }
+    }
+
+    // ---------------------------- UTILITAS ----------------------------
+    private void clearFields() {
+        txtNama.setText("");
+        txtAlamat.setText("");
+        txtTelepon.setText("");
+        txtEmail.setText("");
+        cmbKategori.setSelectedIndex(0);
+    }
+    
+    
+     // fungsi bantu untuk mendapatkan id database dari nomor urut
+    private int getDatabaseIdFromRow(int rowIndex) {
+        try {
+            List<Alamat> list = controller.getAll();
+            return list.get(rowIndex).getId();
+        } catch (SQLException e) {
+            return -1;
+        }
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    private void showError(String msg) {
+        JOptionPane.showMessageDialog(this, msg, "Error", JOptionPane.ERROR_MESSAGE);
+    }
+
+    
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -56,7 +283,8 @@ public class BukuAlamatFrame extends javax.swing.JFrame {
         lblCari = new javax.swing.JLabel();
         txtPencarian = new javax.swing.JTextField();
         jScrollPane1 = new javax.swing.JScrollPane();
-        tblKontak = new javax.swing.JTable();
+        tblAlamat = new javax.swing.JTable();
+        btnKeluar = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -98,6 +326,11 @@ public class BukuAlamatFrame extends javax.swing.JFrame {
         btnTambah.setFont(new java.awt.Font("Poppins SemiBold", 0, 12)); // NOI18N
         btnTambah.setForeground(new java.awt.Color(255, 255, 255));
         btnTambah.setText("Tambah");
+        btnTambah.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnTambahActionPerformed(evt);
+            }
+        });
 
         btnEdit.setBackground(new java.awt.Color(49, 49, 49));
         btnEdit.setFont(new java.awt.Font("Poppins SemiBold", 0, 12)); // NOI18N
@@ -113,24 +346,44 @@ public class BukuAlamatFrame extends javax.swing.JFrame {
         btnHapus.setFont(new java.awt.Font("Poppins SemiBold", 0, 12)); // NOI18N
         btnHapus.setForeground(new java.awt.Color(255, 255, 255));
         btnHapus.setText("Hapus");
+        btnHapus.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnHapusActionPerformed(evt);
+            }
+        });
 
         btnExport.setBackground(new java.awt.Color(49, 49, 49));
         btnExport.setFont(new java.awt.Font("Poppins SemiBold", 0, 12)); // NOI18N
         btnExport.setForeground(new java.awt.Color(255, 255, 255));
         btnExport.setText("Export");
+        btnExport.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnExportActionPerformed(evt);
+            }
+        });
 
         btnImport.setBackground(new java.awt.Color(49, 49, 49));
         btnImport.setFont(new java.awt.Font("Poppins SemiBold", 0, 12)); // NOI18N
         btnImport.setForeground(new java.awt.Color(255, 255, 255));
         btnImport.setText("Import");
+        btnImport.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnImportActionPerformed(evt);
+            }
+        });
 
         lblCari.setFont(new java.awt.Font("Poppins SemiBold", 0, 12)); // NOI18N
         lblCari.setForeground(new java.awt.Color(255, 255, 255));
         lblCari.setText("Cari :");
 
         txtPencarian.setFont(new java.awt.Font("Poppins SemiBold", 0, 12)); // NOI18N
+        txtPencarian.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyTyped(java.awt.event.KeyEvent evt) {
+                txtPencarianKeyTyped(evt);
+            }
+        });
 
-        tblKontak.setModel(new javax.swing.table.DefaultTableModel(
+        tblAlamat.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
                 {},
                 {},
@@ -141,7 +394,22 @@ public class BukuAlamatFrame extends javax.swing.JFrame {
 
             }
         ));
-        jScrollPane1.setViewportView(tblKontak);
+        tblAlamat.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                tblAlamatMouseClicked(evt);
+            }
+        });
+        jScrollPane1.setViewportView(tblAlamat);
+
+        btnKeluar.setBackground(new java.awt.Color(49, 49, 49));
+        btnKeluar.setFont(new java.awt.Font("Poppins SemiBold", 0, 12)); // NOI18N
+        btnKeluar.setForeground(new java.awt.Color(255, 255, 255));
+        btnKeluar.setText("Keluar");
+        btnKeluar.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnKeluarActionPerformed(evt);
+            }
+        });
 
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
@@ -150,22 +418,11 @@ public class BukuAlamatFrame extends javax.swing.JFrame {
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
                 .addContainerGap(61, Short.MAX_VALUE)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                         .addGroup(jPanel1Layout.createSequentialGroup()
                             .addComponent(lblCari, javax.swing.GroupLayout.PREFERRED_SIZE, 37, javax.swing.GroupLayout.PREFERRED_SIZE)
                             .addGap(34, 34, 34)
                             .addComponent(txtPencarian))
-                        .addGroup(jPanel1Layout.createSequentialGroup()
-                            .addComponent(btnTambah)
-                            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                            .addComponent(btnEdit)
-                            .addGap(18, 18, 18)
-                            .addComponent(btnHapus)
-                            .addGap(18, 18, 18)
-                            .addComponent(btnExport)
-                            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                            .addComponent(btnImport))
                         .addGroup(jPanel1Layout.createSequentialGroup()
                             .addComponent(lblKategori)
                             .addGap(18, 18, 18)
@@ -185,8 +442,24 @@ public class BukuAlamatFrame extends javax.swing.JFrame {
                             .addGap(18, 18, 18)
                             .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                 .addComponent(txtTelepon, javax.swing.GroupLayout.PREFERRED_SIZE, 370, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addComponent(txtEmail, javax.swing.GroupLayout.PREFERRED_SIZE, 370, javax.swing.GroupLayout.PREFERRED_SIZE)))))
-                .addGap(47, 47, 47))
+                                .addComponent(txtEmail, javax.swing.GroupLayout.PREFERRED_SIZE, 370, javax.swing.GroupLayout.PREFERRED_SIZE))))
+                    .addGroup(jPanel1Layout.createSequentialGroup()
+                        .addComponent(btnTambah)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(btnEdit)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(btnHapus)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(btnExport)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(btnImport)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(btnKeluar)))
+                .addGap(24, 24, 24))
+            .addGroup(jPanel1Layout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(jScrollPane1)
+                .addContainerGap())
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -218,7 +491,8 @@ public class BukuAlamatFrame extends javax.swing.JFrame {
                     .addComponent(btnEdit)
                     .addComponent(btnHapus)
                     .addComponent(btnExport)
-                    .addComponent(btnImport))
+                    .addComponent(btnImport)
+                    .addComponent(btnKeluar))
                 .addGap(18, 18, 18)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(lblCari)
@@ -243,8 +517,43 @@ public class BukuAlamatFrame extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void btnEditActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnEditActionPerformed
-        // TODO add your handling code here:
+        editAlamat();
     }//GEN-LAST:event_btnEditActionPerformed
+
+    private void btnTambahActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnTambahActionPerformed
+        addAlamat();
+    }//GEN-LAST:event_btnTambahActionPerformed
+
+    private void btnHapusActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnHapusActionPerformed
+        deleteAlamat();
+    }//GEN-LAST:event_btnHapusActionPerformed
+
+    private void btnExportActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnExportActionPerformed
+        exportToCSV();
+    }//GEN-LAST:event_btnExportActionPerformed
+
+    private void btnImportActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnImportActionPerformed
+        importFromCSV();
+    }//GEN-LAST:event_btnImportActionPerformed
+
+    private void txtPencarianKeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_txtPencarianKeyTyped
+        searchAlamat();
+    }//GEN-LAST:event_txtPencarianKeyTyped
+
+    private void tblAlamatMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tblAlamatMouseClicked
+       int row = tblAlamat.getSelectedRow();
+                if (row != -1) {
+                    txtNama.setText(model.getValueAt(row, 1).toString());
+                    txtAlamat.setText(model.getValueAt(row, 2).toString());
+                    txtTelepon.setText(model.getValueAt(row, 3).toString());
+                    txtEmail.setText(model.getValueAt(row, 4).toString());
+                    cmbKategori.setSelectedItem(model.getValueAt(row, 5).toString());
+                }
+    }//GEN-LAST:event_tblAlamatMouseClicked
+
+    private void btnKeluarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnKeluarActionPerformed
+        System.exit(0);
+    }//GEN-LAST:event_btnKeluarActionPerformed
 
     /**
      * @param args the command line arguments
@@ -286,6 +595,7 @@ public class BukuAlamatFrame extends javax.swing.JFrame {
     private javax.swing.JButton btnExport;
     private javax.swing.JButton btnHapus;
     private javax.swing.JButton btnImport;
+    private javax.swing.JButton btnKeluar;
     private javax.swing.JButton btnTambah;
     private javax.swing.JComboBox<String> cmbKategori;
     private javax.swing.JPanel jPanel1;
@@ -296,7 +606,7 @@ public class BukuAlamatFrame extends javax.swing.JFrame {
     private javax.swing.JLabel lblKategori;
     private javax.swing.JLabel lblNama;
     private javax.swing.JLabel lblTelepon;
-    private javax.swing.JTable tblKontak;
+    private javax.swing.JTable tblAlamat;
     private javax.swing.JTextField txtAlamat;
     private javax.swing.JTextField txtEmail;
     private javax.swing.JTextField txtNama;
