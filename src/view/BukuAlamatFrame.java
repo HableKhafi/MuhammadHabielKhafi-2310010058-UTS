@@ -39,16 +39,16 @@ public class BukuAlamatFrame extends javax.swing.JFrame {
         tblAlamat.setModel(model);
         tblAlamat.getColumnModel().getColumn(0).setPreferredWidth(30);
         tblAlamat.getColumnModel().getColumn(1).setPreferredWidth(120);
-        tblAlamat.getColumnModel().getColumn(2).setPreferredWidth(150);
-        tblAlamat.getColumnModel().getColumn(3).setPreferredWidth(120);
+        tblAlamat.getColumnModel().getColumn(2).setPreferredWidth(155);
+        tblAlamat.getColumnModel().getColumn(3).setPreferredWidth(100);
         tblAlamat.getColumnModel().getColumn(4).setPreferredWidth(200);
-        tblAlamat.getColumnModel().getColumn(5).setPreferredWidth(100);
+        tblAlamat.getColumnModel().getColumn(5).setPreferredWidth(120);
         tblAlamat.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
         
         
         loadAlamat();
         
-        this.setSize(800, 800); // atur ukuran default jendela
+        this.setSize(800, 820); // atur ukuran default jendela
         this.setLocationRelativeTo(null); // tampil di tengah layar
     }
 
