@@ -78,10 +78,20 @@ public class BukuAlamatFrame extends javax.swing.JFrame {
         String email = txtEmail.getText().trim();
         String kategori = (String) cmbKategori.getSelectedItem();
 
-        if (nama.isEmpty() || telepon.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Nama dan Telepon wajib diisi!");
-            return;
-        }
+       if (nama.isEmpty() || alamat.isEmpty() || telepon.isEmpty() || email.isEmpty() || kategori.isEmpty()) {
+        JOptionPane.showMessageDialog(this, 
+            "Semua field wajib diisi (Nama, Alamat, Telepon, Email, dan Kategori)!", 
+            "Validasi Data", JOptionPane.WARNING_MESSAGE);
+        return;
+    }
+
+    // ✅ Validasi tambahan (panjang nomor telepon 12–16 digit)
+    if (!telepon.matches("\\d{12,16}")) {
+        JOptionPane.showMessageDialog(this, 
+            "Nomor telepon harus terdiri dari 12 hingga 16 digit angka!", 
+            "Validasi Telepon", JOptionPane.WARNING_MESSAGE);
+        return;
+    }
 
         try {
             controller.add(nama, alamat, telepon, email, kategori);
@@ -108,14 +118,23 @@ public class BukuAlamatFrame extends javax.swing.JFrame {
         String email = txtEmail.getText().trim();
         String kategori = (String) cmbKategori.getSelectedItem();
 
-        if (nama.isEmpty() || telepon.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Nama dan Telepon wajib diisi!");
-            return;
-        }
+         if (nama.isEmpty() || alamat.isEmpty() || telepon.isEmpty() || email.isEmpty() || kategori.isEmpty()) {
+        JOptionPane.showMessageDialog(this, 
+            "Semua field wajib diisi (Nama, Alamat, Telepon, Email, dan Kategori)!", 
+            "Validasi Data", JOptionPane.WARNING_MESSAGE);
+        return;
+    }
 
+        // ✅ Validasi tambahan (panjang nomor telepon 12–16 digit)
+        if (!telepon.matches("\\d{12,16}")) {
+        JOptionPane.showMessageDialog(this, 
+            "Nomor telepon harus terdiri dari 12 hingga 16 digit angka!", 
+            "Validasi Telepon", JOptionPane.WARNING_MESSAGE);
+        return;
+    }
         try {
             controller.update(id, nama, alamat, telepon, email, kategori);
-            JOptionPane.showMessageDialog(this, "Kontak berhasil diperbarui!");
+            JOptionPane.showMessageDialog(this, "Data berhasil diperbarui!");
             clearFields();
             loadAlamat();
         } catch (SQLException e) {
@@ -313,6 +332,7 @@ public class BukuAlamatFrame extends javax.swing.JFrame {
         btnReset = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        setTitle("Aplikasi Buku Alamat");
 
         jPanel1.setBackground(new java.awt.Color(49, 49, 49));
         jPanel1.setBorder(javax.swing.BorderFactory.createCompoundBorder(javax.swing.BorderFactory.createEmptyBorder(10, 15, 10, 15), javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(255, 255, 255)), "Aplikasi Buku Alamat", javax.swing.border.TitledBorder.CENTER, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Poppins Black", 0, 14), new java.awt.Color(255, 255, 255)))); // NOI18N
@@ -634,10 +654,12 @@ public class BukuAlamatFrame extends javax.swing.JFrame {
     }//GEN-LAST:event_btnResetActionPerformed
 
     private void txtTeleponKeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_txtTeleponKeyTyped
-        char c = evt.getKeyChar();
-        if (!Character.isDigit(c)) {
-                evt.consume(); // Menolak input non-angka
-        }  
+       char c = evt.getKeyChar();
+        // Hanya boleh angka dan maksimal 16 karakter
+        if (!Character.isDigit(c) || txtTelepon.getText().length() >= 16) {
+            evt.consume(); // batalkan input
+        }
+    
     }//GEN-LAST:event_txtTeleponKeyTyped
 
     /**
