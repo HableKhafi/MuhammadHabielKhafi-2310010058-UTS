@@ -95,4 +95,24 @@ public class AlamatDAO {
     }
     return list;
 }
+    public List<Alamat> filterByKategori(String kategori) throws SQLException {
+    List<Alamat> list = new ArrayList<>();
+    String sql = "SELECT * FROM addressbook WHERE kategori = ?";
+    try (Connection conn = DatabaseConnection.getConnection();
+         PreparedStatement ps = conn.prepareStatement(sql)) {
+        ps.setString(1, kategori);
+        ResultSet rs = ps.executeQuery();
+        while (rs.next()) {
+            list.add(new Alamat(
+                    rs.getInt("id"),
+                    rs.getString("nama"),
+                    rs.getString("alamat"),
+                    rs.getString("telepon"),
+                    rs.getString("email"),
+                    rs.getString("kategori")
+            ));
+        }
+    }
+    return list;
+}
 }

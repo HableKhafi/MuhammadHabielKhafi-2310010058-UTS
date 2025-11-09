@@ -39,4 +39,8 @@ public class AlamatController {
     public List<Alamat> search(String keyword) throws SQLException {
         return dao.search(keyword);
     }
+    
+    public List<Alamat> filterByKategori(String kategori) throws SQLException {
+        return dao.filterByKategori(kategori);
+}
 }
