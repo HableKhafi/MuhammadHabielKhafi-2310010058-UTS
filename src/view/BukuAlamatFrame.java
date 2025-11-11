@@ -10,7 +10,6 @@ import model.Alamat;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
-import java.awt.event.*;
 import java.io.*;
 import java.sql.SQLException;
 import java.util.List;
@@ -32,7 +31,8 @@ public class BukuAlamatFrame extends javax.swing.JFrame {
         initComponents();
         
          controller = new AlamatController();
-
+            
+        //Set model table
         model = new DefaultTableModel(new String[]{
                 "No", "Nama", "Alamat", "Telepon", "Email", "Kategori"
         }, 0);
@@ -45,7 +45,7 @@ public class BukuAlamatFrame extends javax.swing.JFrame {
         tblAlamat.getColumnModel().getColumn(5).setPreferredWidth(100);
         tblAlamat.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
         
-        
+        //load data di table
         loadAlamat();
         
         this.setSize(800, 820); // atur ukuran default jendela
@@ -184,7 +184,7 @@ public class BukuAlamatFrame extends javax.swing.JFrame {
             showError(e.getMessage());
         }
     }
-    
+        // ---------------------------- EXPORT DATA ----------------------------    
     private void exportData() {
         JFileChooser fileChooser = new JFileChooser();
         fileChooser.setDialogTitle("Simpan Data");
@@ -221,8 +221,8 @@ public class BukuAlamatFrame extends javax.swing.JFrame {
             }
         }
     }
-    
-    // ===== Export CSV =====
+
+        // ---------------------------- EXPORT DATA KE CSV----------------------------
     private void exportAsCSV(File file) throws IOException {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
             writer.write("No,Nama,Alamat,Telepon,Email,Kategori\n");
@@ -237,6 +237,7 @@ public class BukuAlamatFrame extends javax.swing.JFrame {
     }
 }
 
+        // ---------------------------- EXPORT DATA KE TXT----------------------------
    private void exportAsTXT(File file) throws IOException {
     try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
         for (int i = 0; i < model.getRowCount(); i++) {
@@ -251,7 +252,7 @@ public class BukuAlamatFrame extends javax.swing.JFrame {
     }
 }
 
-// ===== Export JSON =====
+        // ---------------------------- EXPORT DATA KE JSON----------------------------
     private void exportAsJSON(File file) throws IOException {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
             writer.write("[\n");
@@ -268,7 +269,7 @@ public class BukuAlamatFrame extends javax.swing.JFrame {
             writer.write("]");
         }
     }
-
+        // ---------------------------- IMPORT DATA ----------------------------
     private void importData() {
      JFileChooser fileChooser = new JFileChooser();
      fileChooser.setDialogTitle("Pilih File untuk Diimpor");
@@ -298,7 +299,7 @@ public class BukuAlamatFrame extends javax.swing.JFrame {
      }
  }
     
-        // ===== Import CSV =====
+        // ---------------------------- IMPORT DATA KE CSV----------------------------
     private void importFromCSV(File file) throws IOException, SQLException {
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
             String line = reader.readLine(); // skip header
@@ -311,7 +312,7 @@ public class BukuAlamatFrame extends javax.swing.JFrame {
         }
     }
 
-    // ===== Import TXT =====
+        // ---------------------------- IMPORT DATA KE TXT----------------------------
     private void importFromTXT(File file) throws IOException, SQLException {
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
             String line;
@@ -330,7 +331,7 @@ public class BukuAlamatFrame extends javax.swing.JFrame {
         }
     }
 
-    // ===== Import JSON =====
+        // ---------------------------- IMPORT DATA KE JSON----------------------------
     private void importFromJSON(File file) throws IOException, SQLException {
         String content = new String(java.nio.file.Files.readAllBytes(file.toPath()));
         content = content.replace("[", "").replace("]", "").trim();
@@ -384,7 +385,7 @@ public class BukuAlamatFrame extends javax.swing.JFrame {
     }
     
     
-    
+        // ---------------------------- FILTER DATA  ----------------------------    
    private void filterByKategori() {
     String kategori = (String) cmbFilter.getSelectedItem();
 
@@ -690,7 +691,7 @@ public class BukuAlamatFrame extends javax.swing.JFrame {
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(lblNama)
                     .addComponent(txtNama, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addGap(18, 18, 18)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(jPanel1Layout.createSequentialGroup()
                         .addGap(3, 3, 3)
@@ -728,7 +729,7 @@ public class BukuAlamatFrame extends javax.swing.JFrame {
                             .addComponent(btnImport)
                             .addComponent(btnKeluar)
                             .addComponent(lblFilter))))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 66, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 60, Short.MAX_VALUE)
                 .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 332, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(30, 30, 30))
         );
