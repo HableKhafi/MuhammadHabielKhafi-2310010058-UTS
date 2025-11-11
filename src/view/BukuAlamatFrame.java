@@ -14,7 +14,7 @@ import java.awt.event.*;
 import java.io.*;
 import java.sql.SQLException;
 import java.util.List;
-
+import javax.swing.filechooser.FileNameExtensionFilter;
 /**
  *
  * @author ASUS
@@ -185,55 +185,178 @@ public class BukuAlamatFrame extends javax.swing.JFrame {
         }
     }
     
-     // ---------------------------- EXPORT CSV ----------------------------
-    private void exportToCSV() {
+    private void exportData() {
         JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setDialogTitle("Simpan File CSV");
-        int userSelection = fileChooser.showSaveDialog(this);
+        fileChooser.setDialogTitle("Simpan Data");
 
+        // Tambahkan pilihan filter file
+        FileNameExtensionFilter csvFilter = new FileNameExtensionFilter("CSV File (*.csv)", "csv");
+        FileNameExtensionFilter txtFilter = new FileNameExtensionFilter("Text File (*.txt)", "txt");
+        FileNameExtensionFilter jsonFilter = new FileNameExtensionFilter("JSON File (*.json)", "json");
+
+        fileChooser.addChoosableFileFilter(csvFilter);
+        fileChooser.addChoosableFileFilter(txtFilter);
+        fileChooser.addChoosableFileFilter(jsonFilter);
+
+        // Set default filter ke CSV
+        fileChooser.setFileFilter(csvFilter);
+
+        int userSelection = fileChooser.showSaveDialog(this);
         if (userSelection == JFileChooser.APPROVE_OPTION) {
             File file = fileChooser.getSelectedFile();
-            if (!file.getAbsolutePath().endsWith(".csv")) {
-                file = new File(file.getAbsolutePath() + ".csv");
-            }
+            FileNameExtensionFilter selectedFilter = (FileNameExtensionFilter) fileChooser.getFileFilter();
 
-            try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
-                writer.write("No,Nama,Alamat,Telepon,Email,Kategori\n");
-                for (int i = 0; i < model.getRowCount(); i++) {
-                    writer.write(model.getValueAt(i, 0) + "," +
-                            model.getValueAt(i, 1) + "," +
-                            model.getValueAt(i, 2) + "," +
-                            model.getValueAt(i, 3) + "," +
-                            model.getValueAt(i, 4) + "," +
-                            model.getValueAt(i, 5) + "\n");
+            String extension = selectedFilter.getExtensions()[0];
+            File finalFile = new File(file.getAbsolutePath() + "." + extension);
+
+            try {
+                switch (extension) {
+                    case "csv" -> exportAsCSV(finalFile);
+                    case "txt" -> exportAsTXT(finalFile);
+                    case "json" -> exportAsJSON(finalFile);
                 }
-                JOptionPane.showMessageDialog(this, "Data berhasil diekspor ke: " + file.getAbsolutePath());
+                JOptionPane.showMessageDialog(this, "Data berhasil diekspor ke: " + finalFile.getAbsolutePath());
             } catch (IOException e) {
-                showError(e.getMessage());
+                showError("Gagal mengekspor data: " + e.getMessage());
+            }
+        }
+    }
+    
+    // ===== Export CSV =====
+    private void exportAsCSV(File file) throws IOException {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
+            writer.write("No,Nama,Alamat,Telepon,Email,Kategori\n");
+            for (int i = 0; i < model.getRowCount(); i++) {
+                writer.write(model.getValueAt(i, 0) + "," +
+                        model.getValueAt(i, 1) + "," +
+                        model.getValueAt(i, 2) + "," +
+                        model.getValueAt(i, 3) + "," +
+                        model.getValueAt(i, 4) + "," +
+                        model.getValueAt(i, 5) + "\n");
+        }
+    }
+}
+
+   private void exportAsTXT(File file) throws IOException {
+    try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
+        for (int i = 0; i < model.getRowCount(); i++) {
+            writer.write(
+                model.getValueAt(i, 1) + " | " +   // Nama
+                model.getValueAt(i, 2) + " | " +   // Alamat
+                model.getValueAt(i, 3) + " | " +   // Telepon
+                model.getValueAt(i, 4) + " | " +   // Email
+                model.getValueAt(i, 5) + "\n"      // Kategori
+            );
+        }
+    }
+}
+
+// ===== Export JSON =====
+    private void exportAsJSON(File file) throws IOException {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
+            writer.write("[\n");
+            for (int i = 0; i < model.getRowCount(); i++) {
+                writer.write("  {\n");
+                writer.write("    \"no\": \"" + model.getValueAt(i, 0) + "\",\n");
+                writer.write("    \"nama\": \"" + model.getValueAt(i, 1) + "\",\n");
+                writer.write("    \"alamat\": \"" + model.getValueAt(i, 2) + "\",\n");
+                writer.write("    \"telepon\": \"" + model.getValueAt(i, 3) + "\",\n");
+                writer.write("    \"email\": \"" + model.getValueAt(i, 4) + "\",\n");
+                writer.write("    \"kategori\": \"" + model.getValueAt(i, 5) + "\"\n");
+                writer.write(i == model.getRowCount() - 1 ? "  }\n" : "  },\n");
+            }
+            writer.write("]");
+        }
+    }
+
+    private void importData() {
+     JFileChooser fileChooser = new JFileChooser();
+     fileChooser.setDialogTitle("Pilih File untuk Diimpor");
+     int userSelection = fileChooser.showOpenDialog(this);
+
+     if (userSelection == JFileChooser.APPROVE_OPTION) {
+         File file = fileChooser.getSelectedFile();
+         String path = file.getAbsolutePath();
+
+         try {
+             if (path.endsWith(".csv")) {
+                 importFromCSV(file);
+             } else if (path.endsWith(".txt")) {
+                 importFromTXT(file);
+             } else if (path.endsWith(".json")) {
+                 importFromJSON(file);
+             } else {
+                 showError("Format file tidak dikenali. Gunakan .csv, .txt, atau .json");
+                 return;
+             }
+
+             JOptionPane.showMessageDialog(this, "Data berhasil diimpor!");
+             loadAlamat();
+         } catch (Exception e) {
+             showError("Gagal mengimpor data: " + e.getMessage());
+         }
+     }
+ }
+    
+        // ===== Import CSV =====
+    private void importFromCSV(File file) throws IOException, SQLException {
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+            String line = reader.readLine(); // skip header
+            while ((line = reader.readLine()) != null) {
+                String[] data = line.split(",");
+                if (data.length >= 6) {
+                    controller.add(data[1], data[2], data[3], data[4], data[5]);
+                }
             }
         }
     }
 
-    // ---------------------------- IMPORT CSV ----------------------------
-    private void importFromCSV() {
-        JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setDialogTitle("Pilih File CSV");
-        int userSelection = fileChooser.showOpenDialog(this);
+    // ===== Import TXT =====
+    private void importFromTXT(File file) throws IOException, SQLException {
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] parts = line.split("\\|");
+                if (parts.length >= 5) {
+                    controller.add(
+                            parts[0].trim(), // nama
+                            parts[1].trim(), // alamat
+                            parts[2].trim(), // telepon
+                            parts[3].trim(), // email
+                            parts[4].trim()  // kategori
+                    );
+                }
+            }
+        }
+    }
 
-        if (userSelection == JFileChooser.APPROVE_OPTION) {
-            File file = fileChooser.getSelectedFile();
-            try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
-                String line = reader.readLine(); // skip header
-                while ((line = reader.readLine()) != null) {
-                    String[] data = line.split(",");
-                    if (data.length == 6) {
-                        controller.add(data[1], data[2], data[3], data[4], data[5]);
+    // ===== Import JSON =====
+    private void importFromJSON(File file) throws IOException, SQLException {
+        String content = new String(java.nio.file.Files.readAllBytes(file.toPath()));
+        content = content.replace("[", "").replace("]", "").trim();
+
+        String[] objects = content.split("\\},");
+        for (String obj : objects) {
+            String[] fields = obj.replace("{", "").replace("}", "").trim().split(",");
+            String nama = "", alamat = "", telepon = "", email = "", kategori = "";
+
+            for (String f : fields) {
+                String[] keyValue = f.split(":");
+                if (keyValue.length == 2) {
+                    String key = keyValue[0].replace("\"", "").trim();
+                    String value = keyValue[1].replace("\"", "").trim();
+                    switch (key) {
+                        case "nama" -> nama = value;
+                        case "alamat" -> alamat = value;
+                        case "telepon" -> telepon = value;
+                        case "email" -> email = value;
+                        case "kategori" -> kategori = value;
                     }
                 }
-                JOptionPane.showMessageDialog(this, "Data berhasil diimpor!");
-                loadAlamat();
-            } catch (Exception e) {
-                showError(e.getMessage());
+            }
+
+            if (!nama.isEmpty()) {
+                controller.add(nama, alamat, telepon, email, kategori);
             }
         }
     }
@@ -244,6 +367,7 @@ public class BukuAlamatFrame extends javax.swing.JFrame {
         txtAlamat.setText("");
         txtTelepon.setText("");
         txtEmail.setText("");
+        txtPencarian.setText("");
         cmbKategori.setSelectedIndex(0);
         cmbFilter.setSelectedIndex(0);
     }
@@ -503,7 +627,7 @@ public class BukuAlamatFrame extends javax.swing.JFrame {
                         .addGap(166, 166, 166)
                         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
-                                .addGap(0, 0, Short.MAX_VALUE)
+                                .addGap(0, 370, Short.MAX_VALUE)
                                 .addComponent(btnReset)
                                 .addGap(152, 152, 152))
                             .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
@@ -636,11 +760,11 @@ public class BukuAlamatFrame extends javax.swing.JFrame {
     }//GEN-LAST:event_btnHapusActionPerformed
 
     private void btnExportActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnExportActionPerformed
-        exportToCSV();
+        exportData();
     }//GEN-LAST:event_btnExportActionPerformed
 
     private void btnImportActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnImportActionPerformed
-        importFromCSV();
+        importData();
     }//GEN-LAST:event_btnImportActionPerformed
 
     private void tblAlamatMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tblAlamatMouseClicked
